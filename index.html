@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>JSON API, le bonheur des normes</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
 		<link rel="stylesheet" href="css/theme/black.css">
@@ -24,8 +24,208 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section>
+					<h1>JSON API, le bonheur des normes</h1>
+					<p><small>Par Gaël Demette, CTO @ HungryUp</small></p>
+				</section>
+				<section>
+					<h2>Courant (récupération d'une liste)</h2>
+					<pre><code data-trim data-noescape>
+[
+	{
+		"id": 1,
+		"question": "foo",
+		"tata": "bar"
+	},
+	{
+		"id":0,
+		"toto": "foo",
+		"tata": "bar"
+	}
+]
+					</code></pre>
+				</section>
+				<section>
+					<h2>Avec JSONAPI</h2>
+					<pre><code data-trim data-noescape>
+{
+	"data": [
+		{
+			"type": "foos"
+			"id": 1,
+			"attributes": {
+				"toto": "foo",
+				"tata": "bar"
+			}
+		},
+		{
+			"type": "foos"
+			"id": 0,
+			"attributes": {
+				"toto": "foo",
+				"tata": "bar"
+			}
+		}
+	]
+}
+
+					</code></pre>
+				</section>
+				<section>
+					<h2>Ça sert à quoi ?</h2>
+					<ul>
+						<li>Suivre une (bonne) pratique</li>
+						<li class="fragment">Engraisser ses échanges...</li>
+						<li class="fragment">Gérer ses relations explicitement</li>
+						<li class="fragment">Plus simple que HAL</li>
+					</ul>
+				</section>
+				<section>
+					<h2>PATCH VS PUT</h2>
+					<p>HTTP 1.1 VS Vie de tous les jours</p>
+				</section>
+				<section>
+					<h2>Pourquoi la clef "Data" ?</h2>
+					<ul>
+						<li>Que faire en cas de données en relation ?</li>
+						<li class="fragment">Comment gérer la pagination ?</li>
+						<li class="fragment">Où indiquer des liens ?</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Gérer les relations </h2>
+					<pre><code data-trim data-noescape>
+{
+	"data":
+		{
+			"type": "questions"
+			"id": 1,
+			"attributes": {
+				"question": "Who are you ?",
+				"answer": "I'm foo !"
+			}
+			"relationships": {
+				"category": {
+					"data": { "type": "categories", "id": 9 }
+				}
+			}
+		}
+}
+
+					</code></pre>
+				</section>
+				<section>
+					<h2>Gérer les relations (y inclure directement la donnée)</h2>
+					<pre><code data-trim data-noescape>
+{
+	"included": [
+		{
+			"type": "categories"
+			"id": 9,
+			"attributes": {
+				"label": "Useless",
+			}
+		}]
+}
+
+					</code></pre>
+				</section>
+				<section>
+					<h2>Gérer la pagination</h2>
+					<pre><code data-trim data-noescape>
+{
+	"meta": {
+		"count": 100,
+		"offset": 10,
+	}
+}
+
+					</code></pre>
+				</section>
+				<section>
+					<h2>Gérer les liens</h2>
+					<pre><code data-trim data-noescape>
+{
+	"links": {
+		"next": "https://mon-api/questions?page[offset]=90",
+		"previous": "https://mon-api/questions?page[offset]=30",
+		"canonical": "https://mon-api/questions?page[offset]=60"
+	}
+}
+
+					</code></pre>
+				</section>
+				<section>
+					<h2>Gérer les liens (interne)</h2>
+					<pre><code data-trim data-noescape>
+{
+	"data":
+		{
+			"type": "questions"
+			"id": 1,
+			"attributes": {
+				"question": "Who are you ?",
+				"answer": "I'm foo !"
+			}
+			"relationships": {
+				"category": {
+					"data": { "type": "categories", "id": 9 },
+					"links": { "self": "https://mon-api/categories/9" }
+				}
+			}
+		}
+}
+					</code></pre>
+				</section>
+				<section>
+					<h2>Qui l'utilise ?</h2>
+					<ul>
+						<li>EmberJS</li>
+						<li class="fragment">Zalando</li>
+						<li class="fragment">... HungryUp</li>
+						<li class="fragment">... Plein d'autres</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Exemple : Ember way</h2>
+					<h3>Coté nodeJS</h3>
+					<pre><code data-trim data-noescape>
+var jsonApi = require("jsonapi-server");
+jsonApi.setConfig({	port: 3000 });
+
+jsonApi.define({
+	resource: "questions",
+	handlers: new jsonApi.MemoryHandler(),
+	attributes: {
+	question: jsonApi.Joi.string(),
+	answer: jsonApi.Joi.string(),
+	}
+});
+
+jsonApi.start();
+					</code></pre>
+				</section>
+				<section>
+					<h2>Exemple : Ember way</h2>
+					<h3>Coté EmberJS</h3>
+					<pre><code data-trim data-noescape>
+# ember g model
+					</code></pre>
+				</section>
+				<section>
+					<h2>Et chez HungryUp...</h2>
+					<ul>
+						<li>Intégré à mongoose</li>
+						<li class="fragment">CRUD pour l'administration générique en ~ 100 lignes de code</li>
+						<li class="fragment">Avantage de la vitesse de conception & sécurité de l'accès</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Questions</h2>
+				</section>
+				<section>
+					<h1>Merci</h1>
+				</section>
 			</div>
 		</div>
 
